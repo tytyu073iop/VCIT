@@ -22,7 +22,7 @@ app.get("/", (req, res) => {
 function startRenderSite(prompt) {
   const id = crypto.randomUUID();
 
-  setTimeout(() => siteMap.set(id, {isready: true, site: `this is site for ${prompt}`}));
+  setTimeout(() => siteMap.set(id, {isready: true, site: `this is site for ${prompt}`}), 5000);
 
   return id;
 }
@@ -40,11 +40,22 @@ ${renderToString(<LoadingScreen />)}
     count = (count + 1) % 4;
     if (dots) dots.textContent = ".".repeat(count);
   }, 400);
+
+  (async () => {
+    while (true) {
+      const res = await fetch("/isready/${id}");
+      const data = await res.json();
+      if (data.isready) {
+        window.location.href = "/site/${id}";
+        break;
+      }
+      console.log("site not ready");
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  })();
 </script>`;
   res.send(html);
 });
-
-app.get()
 
 app.get("/isready/:id", (req, res) => {
   const entry = siteMap.get(req.params.id);
