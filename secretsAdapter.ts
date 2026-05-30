@@ -1,0 +1,1 @@
+export const SECRET_OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");

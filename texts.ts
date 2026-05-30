@@ -1,0 +1,1 @@
+export const instruction = () => "enter prompt like this http://site/prompt";
