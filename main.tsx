@@ -18,7 +18,7 @@ app.get("/", (_req, res) => {
   res.send(texts.instruction());
 });
 
-export const aiChat = new AiChat()
+export const aiChat = new AiChat();
 
 function startRenderSite(prompt: string, renderSiteF: (prompt: string) => Promise<string> = aiChat.renderSite): string {
   const id = siteLifeCycle.beginSiteCreation();
@@ -46,6 +46,16 @@ app.get("/:prompt", (req, res) => {
     while (true) {
       const res = await fetch("/isready/${id}");
       const data = await res.json();
+      switch (data) {
+        case ("${texts.True()}"):
+          window.location.href = "/site/${id}";
+          return;
+        case ("${texts.False()}"):
+          break;
+        case ("${texts.noSiteError()}"):
+          document.body.setHTML("no site, refresh");
+          return;
+      }
       if (data.isready) {
         window.location.href = "/site/${id}";
         break;

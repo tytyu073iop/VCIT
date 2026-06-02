@@ -2,13 +2,15 @@ import { OpenRouter } from "@openrouter/sdk";
 import { SECRET_OPENROUTER_API_KEY } from "./secretsAdapter.ts";
 
 export class AiChat {
+    openrouter: OpenRouter;
+
     constructor() {
         this.openrouter = new OpenRouter({
   apiKey: SECRET_OPENROUTER_API_KEY
 });
     }
 
-    async renderSite(prompt: string): Promise<string> {
+    renderSite = async (prompt: string): Promise<string> => {
   console.log("request sent");
   const responce = await this.openrouter.chat.send({
     chatRequest: {
@@ -34,6 +36,4 @@ request: ${prompt}`
   console.log("request done");  
   return responce.choices[0].message.content;
 }
-
-    openrouter: OpenRouter
 }
