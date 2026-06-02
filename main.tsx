@@ -23,7 +23,7 @@ export const aiChat = new AiChat();
 function startRenderSite(prompt: string, renderSiteF: (prompt: string) => Promise<string> = aiChat.renderSite): string {
   const id = siteLifeCycle.beginSiteCreation();
   
-  renderSiteF(prompt).then(res => {console.log(`${id} is ready`); siteLifeCycle.setSiteContent(id, res); Deno.writeTextFile("./test.html", res);});
+  renderSiteF(prompt).then(res => {console.log(`${id} is ready`); siteLifeCycle.setSiteContent(id, res);});
   
   return id;
 }
