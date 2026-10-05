@@ -4,6 +4,9 @@ export const instruction = () => "enter prompt like this http://site/prompt";
 /** Error message for an unknown site id. */
 export const noSiteError = () => "no site";
 
+/** Error message returned when a render could not be started at all. */
+export const renderStartError = () => "could not start rendering site";
+
 /** The literal string "true". */
 export const True = () => "true";
 

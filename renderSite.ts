@@ -22,13 +22,28 @@ export class AiChat {
   /**
    * Asks the model to generate an HTML page for the given prompt.
    *
+   * Deliberately not `async`: a missing API key must throw synchronously, so the
+   * caller can reject the request before it has already answered with a polling
+   * page for a render that can never succeed. Anything that goes wrong after
+   * the router is built is reported by rejecting the returned promise.
+   *
    * @param prompt - The user request to render.
-   * @returns The generated HTML content.
+   * @returns A promise for the generated HTML content.
+   * @throws If the OpenRouter API key is not set.
    */
-  renderSite = async (prompt: string): Promise<string> => {
-    console.log("request sent");
+  renderSite = (prompt: string): Promise<string> => {
     const router = this.openrouter ??
       this.routerFactory(requireOpenRouterApiKey());
+
+    return this.request(router, prompt);
+  };
+
+  /** Sends the chat request and returns the model's HTML output. */
+  private request = async (
+    router: OpenRouter,
+    prompt: string,
+  ): Promise<string> => {
+    console.log("request sent");
     const response = await router.chat.send({
       chatRequest: {
         model: openrouterModel(),

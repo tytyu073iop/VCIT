@@ -11,12 +11,20 @@ const originalRepo = siteLifeCycle.repo;
 const originalIsSiteReady = siteLifeCycle.isSiteReady;
 const originalRenderSite = aiChat.renderSite;
 const originalOpenrouter = aiChat.openrouter;
+const originalBeginSiteCreation = siteLifeCycle.beginSiteCreation;
+const originalKey = Deno.env.get("OPENROUTER_API_KEY");
 
 afterEach(() => {
   siteLifeCycle.repo = originalRepo;
   siteLifeCycle.isSiteReady = originalIsSiteReady;
+  siteLifeCycle.beginSiteCreation = originalBeginSiteCreation;
   aiChat.renderSite = originalRenderSite;
   aiChat.openrouter = originalOpenrouter;
+  if (originalKey === undefined) {
+    Deno.env.delete("OPENROUTER_API_KEY");
+  } else {
+    Deno.env.set("OPENROUTER_API_KEY", originalKey);
+  }
 });
 
 function fakeRepo(
@@ -72,6 +80,7 @@ it("check state on /isready/ true", async () => {
 it("check prompt rendering request /prompt", async () => {
   const prompt = "test prompt";
   const req: string[] = [];
+  Deno.env.set("OPENROUTER_API_KEY", "test-key");
   aiChat.renderSite = (prompt: string) => {
     req.push(prompt);
     return Promise.resolve("test site");
@@ -81,6 +90,40 @@ it("check prompt rendering request /prompt", async () => {
     .expect("Content-Type", /^text\/html/);
   assertEquals(req.length, 1);
   assertEquals(req[0], prompt);
+});
+
+it("returns 500 on /prompt when the api key is missing", async () => {
+  Deno.env.delete("OPENROUTER_API_KEY");
+  aiChat.openrouter = undefined;
+  let created = false;
+  siteLifeCycle.beginSiteCreation = () => {
+    created = true;
+    return "1";
+  };
+
+  const res = await request(app).get("/test prompt").expect(500);
+  assertEquals(res.text, texts.renderStartError());
+  assertEquals(created, false);
+});
+
+it("returns 500 on /prompt when the api key is empty", async () => {
+  Deno.env.set("OPENROUTER_API_KEY", "");
+  aiChat.openrouter = undefined;
+
+  await request(app).get("/test prompt").expect(500);
+});
+
+it("survives a rejected render without crashing the process", async () => {
+  Deno.env.set("OPENROUTER_API_KEY", "test-key");
+  aiChat.renderSite = () => Promise.reject(new Error("boom"));
+
+  const res = await request(app).get("/test prompt")
+    .expect("Content-Type", /^text\/html/);
+  assertEquals(res.text.includes("/isready/"), true);
+
+  // Give the rejected promise a chance to settle; an unhandled rejection here
+  // would fail the test run rather than being logged.
+  await new Promise((resolve) => setTimeout(resolve, 10));
 });
 
 it("check that site is given by /id", async () => {

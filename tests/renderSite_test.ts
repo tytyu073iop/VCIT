@@ -1,4 +1,4 @@
-import { assertEquals } from "@std/assert";
+import { assertEquals, assertThrows } from "@std/assert";
 import { afterEach, it } from "@std/testing/bdd";
 import { AiChat } from "../renderSite.ts";
 import { OpenRouter } from "@openrouter/sdk";
@@ -54,6 +54,30 @@ it("sends model, prompt and non-streaming flag to openrouter", async () => {
   assertEquals(chatRequest.messages, [
     { role: "user", content: renderSitePrompt("make a page") },
   ]);
+});
+
+it("renderSite throws synchronously when the api key is not set", () => {
+  Deno.env.delete("OPENROUTER_API_KEY");
+  aiChat.openrouter = undefined;
+
+  assertThrows(
+    () => aiChat.renderSite("prompt"),
+    Error,
+    "OPENROUTER_API_KEY is not set",
+  );
+});
+
+it("renderSite does not send a request when the api key is not set", () => {
+  Deno.env.delete("OPENROUTER_API_KEY");
+  aiChat.openrouter = undefined;
+  let sent = false;
+  aiChat.routerFactory = () => {
+    sent = true;
+    return {} as unknown as OpenRouter;
+  };
+
+  assertThrows(() => aiChat.renderSite("prompt"), Error);
+  assertEquals(sent, false);
 });
 
 it("constructs a new router with the api key when openrouter is unset", async () => {
