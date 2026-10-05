@@ -1,6 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch --allow-net main.ts",
+    "dev": "USE_MOCK_AI=true deno run --watch --allow-net --allow-env main.ts",
+    "dev:real": "deno run --watch --allow-net --allow-env main.ts",
     "test": "deno test --allow-env --allow-read --allow-net --allow-sys --coverage=coverage && deno coverage coverage"
   },
   "imports": {

@@ -11,3 +11,13 @@ export function requireOpenRouterApiKey(): string {
   }
   return apiKey;
 }
+
+/**
+ * Whether the offline mock AI chat should be used instead of OpenRouter.
+ *
+ * @returns `true` when `USE_MOCK_AI` is set to `true` or `1`.
+ */
+export function useMockAi(): boolean {
+  const flag = Deno.env.get("USE_MOCK_AI");
+  return flag === "true" || flag === "1";
+}

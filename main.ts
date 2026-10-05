@@ -2,7 +2,7 @@ import express from "express";
 import * as texts from "./texts.ts";
 import { SiteLifeCycle } from "./SiteLifeCycle.ts";
 import { SiteRepositoryImpl } from "./SiteRepositoryImpl.ts";
-import { AiChat } from "./renderSite.ts";
+import { createAiChat } from "./aiChatFactory.ts";
 import { pollingPage } from "./pollingPage.ts";
 
 /** The Express application that serves the site rendering endpoints. */
@@ -16,8 +16,11 @@ app.get("/", (_req, res) => {
   res.send(texts.instruction());
 });
 
-/** Wrapper around the OpenRouter SDK used to render prompt-driven HTML. */
-export const aiChat = new AiChat();
+/**
+ * Wrapper around the AI chat used to render prompt-driven HTML: OpenRouter in
+ * normal runs, the offline mock when `USE_MOCK_AI` is set.
+ */
+export const aiChat = createAiChat();
 
 /**
  * Formats a caught value as a single log line.

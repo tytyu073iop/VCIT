@@ -1,4 +1,5 @@
 import { OpenRouter } from "@openrouter/sdk";
+import { AiChatInterface } from "./AiChatInterface.ts";
 import { requireOpenRouterApiKey } from "./secretsAdapter.ts";
 import { openrouterModel, renderSitePrompt } from "./texts.ts";
 
@@ -12,7 +13,7 @@ export type RouterFactory = (apiKey: string) => OpenRouter;
  * Thin wrapper around `@openrouter/sdk` that turns a prompt into a complete,
  * self-contained HTML page.
  */
-export class AiChat {
+export class AiChat implements AiChatInterface {
   /** Reused OpenRouter client, if already constructed. */
   openrouter?: OpenRouter;
 

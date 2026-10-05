@@ -30,6 +30,15 @@ deno task dev
 
 Then open `http://localhost:8000/your prompt here`.
 
+### Running without an AI
+
+`deno task dev` sets `USE_MOCK_AI=true`, so it serves a canned page and needs no
+API key or network access. To run against OpenRouter instead:
+
+```sh
+deno task dev:real
+```
+
 ### Docker
 
 Create a `secrets.env` file (gitignored) with:
@@ -55,10 +64,12 @@ deno task test
 ## Environment / permissions
 
 - `OPENROUTER_API_KEY` is required and read via `Deno.env.get` in
-  `secretsAdapter.ts`.
+  `secretsAdapter.ts` (not needed when `USE_MOCK_AI` is on).
+- `USE_MOCK_AI=true` (or `1`) selects `MockAiChat` via `createAiChat` in
+  `aiChatFactory.ts`; any other value keeps the OpenRouter chat.
 - The real run needs `--allow-env` and `--allow-read` in addition to
-  `--allow-net` (see the Dockerfile CMD). The `dev` task only grants
-  `--allow-net`, so under `deno task dev` the API key is not accessible.
+  `--allow-net` (see the Dockerfile CMD). The `dev` task grants
+  `--allow-net --allow-env`.
 - `@openrouter/sdk` has an allowed postinstall script (`allowScripts` in
   `deno.json`).
 - `deno.lock` is committed and copied by the Dockerfile for reproducible

@@ -17,6 +17,30 @@ export const False = () => "false";
 export const openrouterModel = () => "openrouter/free";
 
 /**
+ * Escapes text so it can be embedded in HTML markup.
+ *
+ * @param text - The raw text.
+ */
+export const escapeHtml = (text: string): string =>
+  text
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+
+/** Builds the canned HTML page returned by the mock AI chat. */
+export const mockSite = (prompt: string): string =>
+  `<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>mock: ${escapeHtml(prompt)}</title></head>
+<body>
+<h1>mock page</h1>
+<p>This page was generated locally by the mock AI chat; no AI was called.</p>
+<p>prompt: <code>${escapeHtml(prompt)}</code></p>
+</body>
+</html>`;
+
+/**
  * Builds the system prompt that instructs the model to produce a complete,
  * self-contained HTML page for the user's request.
  *

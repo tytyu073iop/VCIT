@@ -5,12 +5,12 @@ import request from "supertest";
 import { aiChat, app, siteLifeCycle } from "../main.ts";
 import { SiteRepository } from "../SiteRepositoryInterface.ts";
 import { Site } from "../Site.ts";
+import { AiChat } from "../renderSite.ts";
 import { OpenRouter } from "@openrouter/sdk";
 
 const originalRepo = siteLifeCycle.repo;
 const originalIsSiteReady = siteLifeCycle.isSiteReady;
 const originalRenderSite = aiChat.renderSite;
-const originalOpenrouter = aiChat.openrouter;
 const originalBeginSiteCreation = siteLifeCycle.beginSiteCreation;
 const originalKey = Deno.env.get("OPENROUTER_API_KEY");
 
@@ -19,13 +19,19 @@ afterEach(() => {
   siteLifeCycle.isSiteReady = originalIsSiteReady;
   siteLifeCycle.beginSiteCreation = originalBeginSiteCreation;
   aiChat.renderSite = originalRenderSite;
-  aiChat.openrouter = originalOpenrouter;
   if (originalKey === undefined) {
     Deno.env.delete("OPENROUTER_API_KEY");
   } else {
     Deno.env.set("OPENROUTER_API_KEY", originalKey);
   }
 });
+
+/** Routes the app's render through an OpenRouter chat with an injected client. */
+function useOpenRouterChat(client?: OpenRouter): void {
+  const chat = new AiChat();
+  chat.openrouter = client;
+  aiChat.renderSite = (prompt: string) => chat.renderSite(prompt);
+}
 
 function fakeRepo(
   getMutating: (id: string) => Site | undefined,
@@ -94,7 +100,7 @@ it("check prompt rendering request /prompt", async () => {
 
 it("returns 500 on /prompt when the api key is missing", async () => {
   Deno.env.delete("OPENROUTER_API_KEY");
-  aiChat.openrouter = undefined;
+  useOpenRouterChat();
   let created = false;
   siteLifeCycle.beginSiteCreation = () => {
     created = true;
@@ -108,7 +114,7 @@ it("returns 500 on /prompt when the api key is missing", async () => {
 
 it("returns 500 on /prompt when the api key is empty", async () => {
   Deno.env.set("OPENROUTER_API_KEY", "");
-  aiChat.openrouter = undefined;
+  useOpenRouterChat();
 
   await request(app).get("/test prompt").expect(500);
 });
@@ -172,7 +178,8 @@ it("isSiteReady returns true for an existing ready site", () => {
 });
 
 it("renderSite calls openrouter and returns content", async () => {
-  aiChat.openrouter = {
+  const chat = new AiChat();
+  chat.openrouter = {
     chat: {
       send: () => ({
         choices: [{ message: { content: "generated html" } }],
@@ -180,6 +187,6 @@ it("renderSite calls openrouter and returns content", async () => {
     },
   } as unknown as OpenRouter;
 
-  const result = await aiChat.renderSite("test prompt");
+  const result = await chat.renderSite("test prompt");
   assertEquals(result, "generated html");
 });
