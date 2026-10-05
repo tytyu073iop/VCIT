@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "USE_MOCK_AI=true deno run --watch --allow-net --allow-env main.ts",
-    "dev:real": "deno run --watch --allow-net --allow-env main.ts",
+    "dev": "USE_MOCK_AI=true deno run --watch --allow-net --allow-env --allow-sys --import=./instrumentation.ts main.ts",
+    "dev:real": "deno run --watch --allow-net --allow-env --allow-sys --import=./instrumentation.ts main.ts",
     "test": "deno test --allow-env --allow-read --allow-net --allow-sys --coverage=coverage && deno coverage coverage"
   },
   "imports": {
@@ -14,5 +14,5 @@
     "supertest": "npm:supertest@^7.2.2"
   },
   "nodeModulesDir": "auto",
-  "allowScripts": ["npm:@openrouter/sdk"]
+  "allowScripts": ["npm:@openrouter/sdk", "npm:protobufjs@7.6.6"]
 }
