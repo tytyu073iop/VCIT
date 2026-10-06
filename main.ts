@@ -60,6 +60,8 @@ function startRenderSite(
 ): string {
   // Start the render before registering the site: a render that cannot even be
   // started must not leave a permanently unready site behind.
+  const rendering = renderSiteF(prompt);
+
   const tracer = trace.getTracer("vcit");
   const span = tracer.startSpan("site.request_to_ready");
   const id = siteLifeCycle.beginSiteCreation();
@@ -69,7 +71,6 @@ function startRenderSite(
     "prompt.length": prompt.length,
     "prompt.preview": preview,
   });
-  const rendering = renderSiteF(prompt);
 
   rendering
     .then((content) => {
