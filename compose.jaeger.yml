@@ -9,10 +9,11 @@ services:
       - secrets.env
     environment:
       OTEL_SERVICE_NAME: vcit
-      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://alloy:4318/v1/traces
       OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://alloy:4318/v1/logs
       OTEL_LOGS_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: prometheus
+      OTEL_TRACES_EXPORTER: otlp
       USE_MOCK_AI: true
     depends_on:
       - jaeger
@@ -58,6 +59,7 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'   # allows hot reload of config
+      - '--web.enable-remote-write-receiver'  # accepts spanmetrics from Alloy
   # Single-binary Loki with the image's built-in local config
   # (/etc/loki/local-config.yaml): filesystem storage, auth off.
   loki:

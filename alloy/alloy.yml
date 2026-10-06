@@ -3,8 +3,9 @@ logging {
 	format = "logfmt"
 }
 
-// The app ships its console output here over OTLP:
+// The app ships its telemetry here over OTLP:
 // OTEL_EXPORTER_OTLP_LOGS_ENDPOINT=http://alloy:4318/v1/logs
+// OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://alloy:4318/v1/traces
 otelcol.receiver.otlp "app" {
 	grpc {
 		endpoint = "0.0.0.0:4317"
@@ -18,6 +19,10 @@ otelcol.receiver.otlp "app" {
 		logs = [
 			otelcol.exporter.debug.stdout.input,
 			otelcol.exporter.loki.to_loki.input,
+		]
+		traces = [
+			otelcol.exporter.otlp.jaeger.input,
+			otelcol.connector.spanmetrics.default.input,
 		]
 	}
 }
@@ -38,5 +43,44 @@ otelcol.exporter.loki "to_loki" {
 loki.write "backend" {
 	endpoint {
 		url = "http://loki:3100/loki/api/v1/push"
+	}
+}
+
+// Forward traces to Jaeger via OTLP
+otelcol.exporter.otlp "jaeger" {
+	client {
+		endpoint = "jaeger:4317"
+		tls {
+			insecure = true
+		}
+	}
+}
+
+// Generate span metrics from traces (for request latency, etc.)
+otelcol.connector.spanmetrics "default" {
+	metrics_flush_interval = "15s"
+
+	namespace = "vcit"
+
+	histogram {
+		unit = "s"
+		explicit {
+			buckets = ["5ms", "10ms", "25ms", "50ms", "100ms", "250ms", "500ms", "1s", "2.5s", "5s", "10s"]
+		}
+	}
+
+	output {
+		metrics = [otelcol.exporter.prometheus.spanmetrics.input]
+	}
+}
+
+// Export span metrics to Prometheus remote_write compatible endpoint
+otelcol.exporter.prometheus "spanmetrics" {
+	forward_to = [prometheus.remote_write.spanmetrics.receiver]
+}
+
+prometheus.remote_write "spanmetrics" {
+	endpoint {
+		url = "http://prometheus:9090/api/v1/write"
 	}
 }

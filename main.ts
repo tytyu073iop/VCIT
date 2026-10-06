@@ -6,6 +6,7 @@ import { createAiChat } from "./aiChatFactory.ts";
 import { errorFields, pathSiteId, promptPreview } from "./log.ts";
 import { hasOpenRouterApiKey, useMockAi } from "./secretsAdapter.ts";
 import { pollingPage } from "./pollingPage.ts";
+import { trace, context } from "@opentelemetry/api";
 
 /** The Express application that serves the site rendering endpoints. */
 export const app = express();
@@ -59,21 +60,34 @@ function startRenderSite(
 ): string {
   // Start the render before registering the site: a render that cannot even be
   // started must not leave a permanently unready site behind.
-  const rendering = renderSiteF(prompt);
+  const tracer = trace.getTracer("vcit");
+  const span = tracer.startSpan("site.request_to_ready");
   const id = siteLifeCycle.beginSiteCreation();
   const preview = promptPreview(prompt);
+  span.setAttributes({
+    "site.id": id,
+    "prompt.length": prompt.length,
+    "prompt.preview": preview,
+  });
+  const rendering = renderSiteF(prompt);
 
   rendering
     .then((content) => {
       try {
         siteLifeCycle.setSiteContent(id, content);
+        span.setAttributes({
+          "site.content.length": content.length,
+        });
         console.log({
           event: "site_ready",
           siteId: id,
           prompt: preview,
           contentLength: content.length,
         });
+        span.end();
       } catch (error) {
+        span.recordException(error as Error);
+        span.end();
         console.error({
           event: "store_failed",
           siteId: id,
@@ -83,6 +97,8 @@ function startRenderSite(
       }
     })
     .catch((error: unknown) => {
+      span.recordException(error as Error);
+      span.end();
       console.error({
         event: "render_failed",
         siteId: id,

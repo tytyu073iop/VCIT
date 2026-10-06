@@ -1,4 +1,5 @@
 import { OpenRouter } from "@openrouter/sdk";
+import { trace } from "@opentelemetry/api";
 import { AiChatInterface } from "./AiChatInterface.ts";
 import { errorFields, promptPreview } from "./log.ts";
 import { requireOpenRouterApiKey } from "./secretsAdapter.ts";
@@ -37,7 +38,16 @@ export class AiChat implements AiChatInterface {
     const router = this.openrouter ??
       this.routerFactory(requireOpenRouterApiKey());
 
-    return this.request(router, prompt);
+    const tracer = trace.getTracer("vcit");
+    const span = tracer.startSpan("ai.render.request");
+    span.setAttributes({
+      "ai.model": openrouterModel(),
+      "prompt.length": prompt.length,
+      "prompt.preview": promptPreview(prompt),
+    });
+    return this.request(router, prompt).finally(() => {
+      span.end();
+    });
   };
 
   /** Sends the chat request and returns the model's HTML output. */
