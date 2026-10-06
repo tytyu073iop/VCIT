@@ -51,13 +51,20 @@ Then:
 
 ```sh
 deno task compose          # docker compose up --build
-deno task compose:jaeger   # same, plus Jaeger
+deno task compose:jaeger   # same, plus the observability stack
 ```
 
 The app is served on port 8000. `deno task compose` runs only the app (tracing
-is switched off via `OTEL_SDK_DISABLED=true`). `deno task compose:jaeger` also
-starts Jaeger with its UI on <http://localhost:16686>, and the app exports its
-spans to it.
+is switched off via `OTEL_SDK_DISABLED=true`). `deno task compose:jaeger`
+(`compose.jaeger.yml`) starts the whole telemetry stack:
+
+| Service | URL | Purpose |
+| --- | --- | --- |
+| Jaeger | <http://localhost:16686> | traces (`OTLP 4317/4318`) |
+| Alloy | <http://localhost:12345> | OTLP intake, forwards logs to Loki |
+| Prometheus | <http://localhost:9090> | scrapes the app's `:9464` metrics |
+| Loki | <http://localhost:3100> | log storage (push/query API) |
+| Grafana | <http://localhost:3000> | Loki + Prometheus datasources, anonymous editor, provisioned dashboards |
 
 ## Tracing
 
@@ -99,10 +106,21 @@ too without env vars — Jaeger on the host is picked up at
 
 `instrumentation.ts` bridges `console.*` calls to the OpenTelemetry Logs API. When
 the SDK is active, it emits OTLP log records alongside stdout mirroring. Set
-`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` to send them to Alloy/Loki/collector (e.g.
-`http://alloy:4318/v1/logs` in Docker). The alloy config in this repo receives
-OTLP on `0.0.0.0:4318` and currently echoes logs to its debug exporter until a
-Loki backend is added.
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` to send them to a collector (e.g.
+`http://alloy:4318/v1/logs` in Docker). The Alloy config in this repo receives
+OTLP on `0.0.0.0:4318`, echoes records to its own stdout, and pushes them to
+Loki, where they land as `{exporter="OTLP", job="vcit", level="INFO"}` with the
+console body (JSON: body, attributes, resource) as the log line.
+
+In the `compose:jaeger` stack, open <http://localhost:3000> (anonymous viewer,
+Loki data source is provisioned) and run e.g.:
+
+```logql
+{job="vcit"} | json
+```
+
+The same query works against the API directly:
+`curl -sG 'http://localhost:3100/loki/api/v1/query_range' --data-urlencode 'query={job="vcit"}'`.
 
 
 ## Tests

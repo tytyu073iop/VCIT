@@ -15,27 +15,28 @@ otelcol.receiver.otlp "app" {
 	}
 
 	output {
-		logs = [otelcol.exporter.debug.stdout.input]
+		logs = [
+			otelcol.exporter.debug.stdout.input,
+			otelcol.exporter.loki.to_loki.input,
+		]
 	}
 }
 
-// No log backend yet (Loki comes later), so records are echoed to this
-// container's stdout: `docker logs <alloy>` shows what the app sent.
+// Echoes every record to this container's stdout: `docker logs <alloy>` shows
+// what the app sent, independent of the Loki backend being up.
 otelcol.exporter.debug "stdout" {
 	verbosity = "normal"
 }
 
-// Once a Loki container exists, replace otelcol.exporter.debug.stdout above
-// with otelcol.exporter.loki.to_loki and uncomment:
-//
-// otelcol.exporter.loki "to_loki" {
-// 	output {
-// 		logs = [loki.write.backend.input]
-// 	}
-// }
-//
-// loki.write "backend" {
-// 	endpoint {
-// 		url = "http://loki:3100/loki/api/v1/push"
-// 	}
-// }
+// OTLP -> Loki. The translator derives labels from the resource, so records
+// land as {exporter="OTLP", job="<OTEL_SERVICE_NAME>", level="<severity>"};
+// the console body and its attributes stay in the log line itself.
+otelcol.exporter.loki "to_loki" {
+	forward_to = [loki.write.backend.receiver]
+}
+
+loki.write "backend" {
+	endpoint {
+		url = "http://loki:3100/loki/api/v1/push"
+	}
+}

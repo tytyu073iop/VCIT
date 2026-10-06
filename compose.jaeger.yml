@@ -28,7 +28,8 @@ services:
   alloy:
     image: grafana/alloy:latest
     ports:
-      - "12345:12345"
+      # Host alloy-lin already owns 12345; use 12346 for the container UI.
+      - "12346:12345"
       # Host-side OTLP/HTTP intake; 4318 itself belongs to Jaeger above.
       - "14318:4318"
     volumes:
@@ -41,6 +42,8 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
       - --storage.path=/var/lib/alloy/data
       - /etc/alloy/config.alloy
+    depends_on:
+      - loki
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -53,8 +56,32 @@ services:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'   # allows hot reload of config
+  # Single-binary Loki with the image's built-in local config
+  # (/etc/loki/local-config.yaml): filesystem storage, auth off.
+  loki:
+    image: grafana/loki:3.7.8
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki-data:/loki
+  grafana:
+    image: grafana/grafana:12.4.12
+    ports:
+      - "3000:3000"
+    environment:
+      # Browse and edit dashboards without a login on localhost; data source is provisioned.
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Editor
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+      - prometheus
 
 volumes:
   prometheus-data:
   alloy-data:
- 
+  loki-data:
+  grafana-data:

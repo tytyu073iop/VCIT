@@ -12,15 +12,21 @@ AI-generated HTML page (OpenRouter). All source is in the repo root; there is no
 - `deno test` — run tests (integration-style, see below)
 - `deno task compose` — `docker compose up --build`, app only, telemetry off
   (`OTEL_SDK_DISABLED=true`, `compose.yml`)
-- `deno task compose:jaeger` — same plus Jaeger (`compose.jaeger.yml`)
+- `deno task compose:jaeger` — full telemetry stack (`compose.jaeger.yml`):
+  Jaeger + Alloy + Prometheus + Loki + Grafana (UIs: Jaeger 16686, Prometheus
+  9090, Grafana 3000, Loki API 3100). Grafana is provisioned with Loki +
+  Prometheus datasources, anonymous Editor auth (login form disabled), and
+  dashboards under the VCIT folder (`grafana/provisioning/`).
 
 ## Logs
 
 Console output is bridged to OTLP logs in `instrumentation.ts` (uses
 `@opentelemetry/api-logs`). Configure `OTEL_LOGS_EXPORTER` and
 `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (e.g. `http://alloy:4318/v1/logs` in Docker);
-Alloy in `compose.jaeger.yml` receives OTLP on 4318 and echoes to debug by
-default.
+Alloy in `compose.jaeger.yml` receives OTLP on 4318, echoes to its own stdout,
+and forwards to Loki (`alloy/alloy.yml` → `loki.write`). Query in Grafana
+(`localhost:3000`, Loki datasource is provisioned, anonymous viewer) with e.g.
+`{job="vcit"} | json`.
 
 ## Environment / permissions
 
