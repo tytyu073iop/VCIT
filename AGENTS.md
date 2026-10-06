@@ -10,7 +10,9 @@ AI-generated HTML page (OpenRouter). All source is in the repo root; there is no
   (`USE_MOCK_AI=true deno run --watch --allow-net --allow-env main.ts`)
 - `deno task dev:real` — same, but against OpenRouter
 - `deno test` — run tests (integration-style, see below)
-- `docker compose up` — build + run on port 8000
+- `deno task compose` — `docker compose up --build`, app only, telemetry off
+  (`OTEL_SDK_DISABLED=true`, `compose.yml`)
+- `deno task compose:jaeger` — same plus Jaeger (`compose.jaeger.yml`)
 
 ## Environment / permissions
 

@@ -12,4 +12,4 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-env", "--allow-read", "--allow-sys", "--import=./instrumentation.ts", "main.ts"]

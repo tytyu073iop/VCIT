@@ -7,3 +7,7 @@ services:
       - 8000:8000
     env_file:
       - secrets.env
+    environment:
+      # No Jaeger here: turn the OpenTelemetry SDK off entirely instead of
+      # exporting spans to a collector that does not exist.
+      OTEL_SDK_DISABLED: "true"

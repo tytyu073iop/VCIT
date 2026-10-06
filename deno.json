@@ -2,7 +2,11 @@
   "tasks": {
     "dev": "USE_MOCK_AI=true deno run --watch --allow-net --allow-env --allow-sys --import=./instrumentation.ts main.ts",
     "dev:real": "deno run --watch --allow-net --allow-env --allow-sys --import=./instrumentation.ts main.ts",
-    "test": "deno test --allow-env --allow-read --allow-net --allow-sys --coverage=coverage && deno coverage coverage"
+    "test": "deno test --allow-env --allow-read --allow-net --allow-sys --coverage=coverage && deno coverage coverage",
+    "compose": "docker compose up --build",
+    "compose:jaeger": "docker compose -f compose.jaeger.yml up --build",
+    "compose:down": "docker compose down",
+    "compose:jaeger:down": "docker compose -f compose.jaeger.yml down"
   },
   "imports": {
     "@openrouter/sdk": "npm:@openrouter/sdk@^0.12.35",
