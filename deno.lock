@@ -13,6 +13,7 @@
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/testing@1": "1.0.21",
     "npm:@openrouter/sdk@~0.12.35": "0.12.79",
+    "npm:@opentelemetry/api-logs@0.222": "0.222.0",
     "npm:@opentelemetry/api@1.9.1": "1.9.1",
     "npm:@opentelemetry/api@^1.9.1": "1.9.1",
     "npm:@opentelemetry/auto-instrumentations-node@0.80": "0.80.0_@opentelemetry+api@1.9.1_@opentelemetry+core@2.11.0",
@@ -1881,6 +1882,7 @@
     ],
     "packageJson": {
       "dependencies": [
+        "npm:@opentelemetry/api-logs@0.222",
         "npm:@opentelemetry/api@^1.9.1",
         "npm:@opentelemetry/auto-instrumentations-node@0.80",
         "npm:@opentelemetry/exporter-metrics-otlp-proto@0.222",

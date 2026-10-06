@@ -1,6 +1,7 @@
 {
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/api-logs": "^0.222.0",
     "@opentelemetry/auto-instrumentations-node": "^0.80.0",
     "@opentelemetry/exporter-metrics-otlp-proto": "^0.222.0",
     "@opentelemetry/exporter-prometheus": "^0.222.0",

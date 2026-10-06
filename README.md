@@ -75,12 +75,16 @@ standard OTEL env vars:
 | `OTEL_SERVICE_NAME` | service name shown in Jaeger (default `vcit`) |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | OTLP base URL, `/v1/traces` is appended |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | full traces URL, wins over the base URL |
+| `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` | full logs URL for OTLP logs exporter |
+| `OTEL_LOGS_EXPORTER=otlp` | send logs over OTLP |
 | `OTEL_TRACES_EXPORTER=console` | print spans to stdout instead of exporting |
 | `OTEL_METRICS_EXPORTER=otlp` | send metrics over OTLP instead of the console |
 
 Jaeger only ingests traces, so metrics default to the console exporter. To send
 them somewhere, point `OTEL_METRICS_EXPORTER=otlp` at a collector or metrics
-backend. For local development with Jaeger in Docker but the app on the host:
+backend. The console logs in `main.ts` and `renderSite.ts` are forwarded to the
+OTLP logs pipeline via `instrumentation.ts` (see below). For local development
+with Jaeger in Docker but the app on the host:
 
 ```sh
 docker compose -f compose.jaeger.yml up jaeger
@@ -90,6 +94,16 @@ deno task dev
 Traces then show up under the `vcit` service in the Jaeger UI. Local run works
 too without env vars — Jaeger on the host is picked up at
 `localhost:4318`.
+
+## Logs
+
+`instrumentation.ts` bridges `console.*` calls to the OpenTelemetry Logs API. When
+the SDK is active, it emits OTLP log records alongside stdout mirroring. Set
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` to send them to Alloy/Loki/collector (e.g.
+`http://alloy:4318/v1/logs` in Docker). The alloy config in this repo receives
+OTLP on `0.0.0.0:4318` and currently echoes logs to its debug exporter until a
+Loki backend is added.
+
 
 ## Tests
 

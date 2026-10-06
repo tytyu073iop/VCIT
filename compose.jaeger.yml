@@ -10,9 +10,13 @@ services:
     environment:
       OTEL_SERVICE_NAME: vcit
       OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://jaeger:4318/v1/traces
+      OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: http://alloy:4318/v1/logs
+      OTEL_LOGS_EXPORTER: otlp
       OTEL_METRICS_EXPORTER: prometheus
+      USE_MOCK_AI: true
     depends_on:
       - jaeger
+      - alloy
   jaeger:
     image: jaegertracing/all-in-one:1.76.0
     environment:
@@ -21,6 +25,22 @@ services:
       - 4317:4317
       - 4318:4318
       - 16686:16686
+  alloy:
+    image: grafana/alloy:latest
+    ports:
+      - "12345:12345"
+      # Host-side OTLP/HTTP intake; 4318 itself belongs to Jaeger above.
+      - "14318:4318"
+    volumes:
+      - ./alloy/alloy.yml:/etc/alloy/config.alloy
+      - alloy-data:/var/lib/alloy/data
+    command:
+      - run
+      # otelcol.exporter.debug is still experimental.
+      - --stability.level=experimental
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -36,4 +56,5 @@ services:
 
 volumes:
   prometheus-data:
+  alloy-data:
  

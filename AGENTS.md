@@ -14,6 +14,14 @@ AI-generated HTML page (OpenRouter). All source is in the repo root; there is no
   (`OTEL_SDK_DISABLED=true`, `compose.yml`)
 - `deno task compose:jaeger` — same plus Jaeger (`compose.jaeger.yml`)
 
+## Logs
+
+Console output is bridged to OTLP logs in `instrumentation.ts` (uses
+`@opentelemetry/api-logs`). Configure `OTEL_LOGS_EXPORTER` and
+`OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` (e.g. `http://alloy:4318/v1/logs` in Docker);
+Alloy in `compose.jaeger.yml` receives OTLP on 4318 and echoes to debug by
+default.
+
 ## Environment / permissions
 
 - `OPENROUTER_API_KEY` env var is required by `AiChat` (`secretsAdapter.ts`
