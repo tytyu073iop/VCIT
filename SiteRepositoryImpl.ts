@@ -19,6 +19,7 @@ export class SiteRepositoryImpl implements SiteRepository {
   add(site: Site): string {
     const id = crypto.randomUUID();
     this.#map.set(id, site);
+    console.log({ event: "site_added", siteId: id, mapSize: this.#map.size });
     return id;
   }
 

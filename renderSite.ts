@@ -1,5 +1,6 @@
 import { OpenRouter } from "@openrouter/sdk";
 import { AiChatInterface } from "./AiChatInterface.ts";
+import { errorFields, promptPreview } from "./log.ts";
 import { requireOpenRouterApiKey } from "./secretsAdapter.ts";
 import { openrouterModel, renderSitePrompt } from "./texts.ts";
 
@@ -44,10 +45,15 @@ export class AiChat implements AiChatInterface {
     router: OpenRouter,
     prompt: string,
   ): Promise<string> => {
-    console.log("request sent");
+    const model = openrouterModel();
+    const preview = promptPreview(prompt);
+    const startedAt = performance.now();
+
+    console.log({ event: "render_start", model, prompt: preview });
+
     const response = await router.chat.send({
       chatRequest: {
-        model: openrouterModel(),
+        model,
         messages: [
           {
             role: "user",
@@ -57,7 +63,41 @@ export class AiChat implements AiChatInterface {
         stream: false,
       },
     });
-    console.log("request done");
-    return response.choices[0].message.content;
+
+    const durationMs = Math.round(performance.now() - startedAt);
+    const choice = response.choices?.[0];
+    const content = choice?.message?.content;
+
+    if (typeof content !== "string") {
+      console.error({
+        event: "render_invalid_response",
+        model,
+        prompt: preview,
+        durationMs,
+        choicesLength: response.choices?.length ?? 0,
+        ...errorFields(
+          new Error("openrouter response contained no message content"),
+        ),
+      });
+      throw new Error("openrouter response contained no message content");
+    }
+
+    if (content.length === 0) {
+      console.warn({
+        event: "render_empty_content",
+        model,
+        prompt: preview,
+        durationMs,
+      });
+    }
+
+    console.log({
+      event: "render_done",
+      model,
+      prompt: preview,
+      durationMs,
+      contentLength: content.length,
+    });
+    return content;
   };
 }

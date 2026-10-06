@@ -3,6 +3,8 @@ import * as texts from "./texts.ts";
 import { SiteLifeCycle } from "./SiteLifeCycle.ts";
 import { SiteRepositoryImpl } from "./SiteRepositoryImpl.ts";
 import { createAiChat } from "./aiChatFactory.ts";
+import { errorFields, pathSiteId, promptPreview } from "./log.ts";
+import { hasOpenRouterApiKey, useMockAi } from "./secretsAdapter.ts";
 import { pollingPage } from "./pollingPage.ts";
 
 /** The Express application that serves the site rendering endpoints. */
@@ -10,6 +12,22 @@ export const app = express();
 
 /** Manages the creation and readiness lifecycle of generated sites. */
 export const siteLifeCycle = new SiteLifeCycle(new SiteRepositoryImpl());
+
+app.use((req, res, next) => {
+  const startedAt = performance.now();
+  res.on("finish", () => {
+    const siteId = pathSiteId(req.path);
+    console.log({
+      event: "request",
+      method: req.method,
+      path: req.path,
+      status: res.statusCode,
+      durationMs: Math.round(performance.now() - startedAt),
+      ...(siteId !== undefined ? { siteId } : {}),
+    });
+  });
+  next();
+});
 
 app.get("/", (_req, res) => {
   res.contentType("text/html");
@@ -21,20 +39,6 @@ app.get("/", (_req, res) => {
  * normal runs, the offline mock when `USE_MOCK_AI` is set.
  */
 export const aiChat = createAiChat();
-
-/**
- * Formats a caught value as a single log line.
- *
- * `console.error` prints an `Error`'s whole stack, which buries the message
- * that actually says what went wrong.
- *
- * @param error - The caught value, of unknown type.
- */
-function describeError(error: unknown): string {
-  return error instanceof Error ? `${error.name}: ${error.message}` : String(
-    error,
-  );
-}
 
 /**
  * Begins creating a site for a prompt and returns its id immediately. The
@@ -57,14 +61,34 @@ function startRenderSite(
   // started must not leave a permanently unready site behind.
   const rendering = renderSiteF(prompt);
   const id = siteLifeCycle.beginSiteCreation();
+  const preview = promptPreview(prompt);
 
   rendering
-    .then((res) => {
-      console.log(`${id} is ready`);
-      siteLifeCycle.setSiteContent(id, res);
+    .then((content) => {
+      try {
+        siteLifeCycle.setSiteContent(id, content);
+        console.log({
+          event: "site_ready",
+          siteId: id,
+          prompt: preview,
+          contentLength: content.length,
+        });
+      } catch (error) {
+        console.error({
+          event: "store_failed",
+          siteId: id,
+          prompt: preview,
+          ...errorFields(error),
+        });
+      }
     })
     .catch((error: unknown) => {
-      console.error(`${id} render failed: ${describeError(error)}`);
+      console.error({
+        event: "render_failed",
+        siteId: id,
+        prompt: preview,
+        ...errorFields(error),
+      });
     });
 
   return id;
@@ -77,7 +101,11 @@ app.get("/:prompt", (req, res) => {
     const id = startRenderSite(prompt);
     res.send(pollingPage(id));
   } catch (error) {
-    console.error(`could not start rendering: ${describeError(error)}`);
+    console.error({
+      event: "render_start_failed",
+      prompt: promptPreview(prompt),
+      ...errorFields(error),
+    });
     res.status(500).type("text/plain").send(texts.renderStartError());
   }
 });
@@ -94,6 +122,7 @@ app.get("/isready/:id", (req, res) => {
 app.get("/site/:id", (req, res) => {
   const site = siteLifeCycle.getSite(req.params.id);
   if (site == null) {
+    console.warn({ event: "site_miss", siteId: req.params.id });
     res.send(texts.noSiteError());
     return;
   }
@@ -102,4 +131,14 @@ app.get("/site/:id", (req, res) => {
 });
 
 app.listen(8000);
-console.log(`Server is running on http://localhost:8000`);
+console.log({
+  event: "startup",
+  aiMode: useMockAi() ? "mock" : "real",
+  openrouterApiKeySet: hasOpenRouterApiKey(),
+  model: texts.openrouterModel(),
+  otelSdkDisabled: Deno.env.get("OTEL_SDK_DISABLED") === "true",
+  otelLogsExporter: Deno.env.get("OTEL_LOGS_EXPORTER") ?? null,
+  otelLogsEndpoint: Deno.env.get("OTEL_EXPORTER_OTLP_LOGS_ENDPOINT") ?? null,
+  otelTracesEndpoint: Deno.env.get("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT") ??
+    null,
+});

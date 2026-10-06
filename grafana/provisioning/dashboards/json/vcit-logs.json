@@ -127,7 +127,7 @@
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(count_over_time({job=\"vcit\"} |= \"is ready\" [5m]))",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"site_ready\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }
@@ -205,6 +205,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "loki" },
+      "description": "Event counts per minute. rate() on sparse bursty logs quantizes into ladders; count_over_time with bars shows each render honestly.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -215,8 +216,8 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 15,
+            "drawStyle": "bars",
+            "fillOpacity": 50,
             "gradientMode": "none",
             "hideFrom": { "legend": false, "tooltip": false, "viz": false },
             "insertNulls": false,
@@ -226,7 +227,7 @@
             "scaleDistribution": { "type": "linear" },
             "showPoints": "never",
             "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
+            "stacking": { "group": "A", "mode": "normal" },
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
@@ -240,6 +241,7 @@
       },
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
       "id": 5,
+      "interval": "1m",
       "options": {
         "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -249,37 +251,37 @@
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(rate({job=\"vcit\"} |= \"request sent\" [5m]))",
-          "legendFormat": "request sent",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"render_start\" [1m]))",
+          "legendFormat": "render_start",
           "queryType": "range",
           "refId": "A"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(rate({job=\"vcit\"} |= \"request done\" [5m]))",
-          "legendFormat": "request done",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"render_done\" [1m]))",
+          "legendFormat": "render_done",
           "queryType": "range",
           "refId": "B"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(rate({job=\"vcit\"} |= \"is ready\" [5m]))",
-          "legendFormat": "site ready",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"site_ready\" [1m]))",
+          "legendFormat": "site_ready",
           "queryType": "range",
           "refId": "C"
         },
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(rate({job=\"vcit\"} |= \"render failed\" [5m]))",
-          "legendFormat": "render failed",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"render_failed\" [1m]))",
+          "legendFormat": "render_failed",
           "queryType": "range",
           "refId": "D"
         }
       ],
-      "title": "Render lifecycle rate",
+      "title": "Render lifecycle (events/min)",
       "type": "timeseries"
     },
     {

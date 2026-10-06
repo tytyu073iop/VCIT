@@ -176,7 +176,7 @@
         {
           "datasource": { "type": "loki", "uid": "loki" },
           "editorMode": "code",
-          "expr": "sum(count_over_time({job=\"vcit\"} |= \"is ready\" [5m]))",
+          "expr": "sum(count_over_time({job=\"vcit\"} |= \"site_ready\" [5m]))",
           "queryType": "range",
           "refId": "A"
         }

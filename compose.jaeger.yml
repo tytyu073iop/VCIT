@@ -22,9 +22,11 @@ services:
     environment:
       COLLECTOR_OTLP_ENABLED: "true"
     ports:
-      - 4317:4317
-      - 4318:4318
+      # The app talks to Jaeger over the Docker network (jaeger:4318).
+      # Host alloy-lin already owns 4317/4318, so publish OTLP elsewhere.
       - 16686:16686
+      - 4117:4317
+      - 14118:4318
   alloy:
     image: grafana/alloy:latest
     ports:
